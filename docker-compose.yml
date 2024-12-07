@@ -12,13 +12,14 @@ services:
       - ./data:/data
       - ./logs:/app/logs
     environment:
+      - SERVICE_FQDN_NEWAPI_3000
       - SQL_DSN=root:Kj9#mP2$vL5@tcp(mysql:3306)/new-api
       - REDIS_CONN_STRING=redis://redis
       - TZ=Asia/Shanghai
       - SESSION_SECRET=xK8#pL9$mN4@vR2*qY7
       - NODE_TYPE=master
       - SYNC_FREQUENCY=300
-      - FRONTEND_BASE_URL=https://api.yourdomain.com
+      - FRONTEND_BASE_URL=${SERVICE_FQDN_NEWAPI_3000}
 
     depends_on:
       - redis
