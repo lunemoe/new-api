@@ -1,63 +1,50 @@
 version: '3.4'
 
 services:
-  api:
+  new-api:
     image: calciumion/new-api:latest
-    environment:
-      # 使用Coolify的魔法环境变量进行服务发现和密码管理
-      - SQL_DSN=${SERVICE_PASSWORD_MYSQL}@tcp(${SERVICE_FQDN_MYSQL})/new-api
-      - REDIS_CONN_STRING=redis://${SERVICE_FQDN_REDIS}
-      - TZ=Asia/Shanghai
-      - SESSION_SECRET=${SERVICE_PASSWORD_64_API}
-      # 可选环境变量
-      - NODE_TYPE=${NODE_TYPE:-master}
-      - SYNC_FREQUENCY=${SYNC_FREQUENCY:-60}
-      - FRONTEND_BASE_URL=${FRONTEND_URL:-http://localhost:3000}
-    volumes:
-      # 使用bind类型的卷，并让Coolify自动创建目录
-      - type: bind
-        source: ./data
-        target: /data
-        is_directory: true
-      - type: bind
-        source: ./logs
-        target: /app/logs
-        is_directory: true
+    container_name: new-api
+    restart: always
     command: --log-dir /app/logs
-    healthcheck:
-      test: ["CMD-SHELL", "wget -q -O - http://localhost:3000/api/status | grep -o '\"success\":\\s*true' | awk -F: '{print $2}'"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./data:/data
+      - ./logs:/app/logs
+    environment:
+      - SQL_DSN=root:Kj9#mP2$vL5@tcp(mysql:3306)/new-api
+      - REDIS_CONN_STRING=redis://redis
+      - TZ=Asia/Shanghai
+      - SESSION_SECRET=xK8#pL9$mN4@vR2*qY7
+      - NODE_TYPE=master
+      - SYNC_FREQUENCY=300
+      - FRONTEND_BASE_URL=https://api.yourdomain.com
+
     depends_on:
       - redis
       - mysql
+    healthcheck:
+      test: [ "CMD-SHELL", "wget -q -O - http://localhost:3000/api/status | grep -o '\"success\":\\s*true' | awk -F: '{print $2}'" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
   redis:
     image: redis:latest
-    volumes:
-      - type: bind
-        source: ./redis-data
-        target: /data
-        is_directory: true
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
+    container_name: redis
+    restart: always
 
   mysql:
     image: mysql:8.2
+    container_name: mysql
+    restart: always
     environment:
-      - MYSQL_ROOT_PASSWORD=${SERVICE_PASSWORD_MYSQL}
-      - MYSQL_DATABASE=new-api
+      MYSQL_ROOT_PASSWORD: Kj9#mP2$vL5
+      MYSQL_DATABASE: new-api
     volumes:
-      - type: bind
-        source: ./mysql-data
-        target: /var/lib/mysql
-        is_directory: true
-    healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${SERVICE_PASSWORD_MYSQL}"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
+      - mysql_data:/var/lib/mysql
+    # ports:
+    #   - "3306:3306"  # 如果需要从外部访问MySQL，取消注释此行
+
+volumes:
+  mysql_data:
